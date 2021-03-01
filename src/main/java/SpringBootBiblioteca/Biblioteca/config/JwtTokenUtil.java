@@ -73,4 +73,11 @@ public class JwtTokenUtil implements Serializable {
         final String email = getEmailFromToken(token);
         return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
+
+    //refresh time token with another token
+    public String refreshToken(String token, int time){
+        final Claims claims = getAllClaimsFromToken(token);
+        token = Jwts.builder().setClaims(claims).setExpiration(new Date(System.currentTimeMillis()+ time)).signWith(SignatureAlgorithm.HS512, secret).compact();
+        return token;
+    }
 }

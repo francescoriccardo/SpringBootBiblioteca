@@ -1,15 +1,18 @@
 package SpringBootBiblioteca.Biblioteca.controller;
 
 import SpringBootBiblioteca.Biblioteca.config.JwtTokenUtil;
+import SpringBootBiblioteca.Biblioteca.model.GenericResponse;
 import SpringBootBiblioteca.Biblioteca.model.JwtResponse;
 import SpringBootBiblioteca.Biblioteca.model.Utente;
 import SpringBootBiblioteca.Biblioteca.service.UtenteService;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 @RestController
@@ -34,10 +37,10 @@ public class UserController {
                 final Date time = jwtTokenUtil.getExpirationDateFromToken(token);
                 return ResponseEntity.ok(new JwtResponse(token,time));
             } else{
-                return ResponseEntity.ok("Utente bloccato o non confermato");
+                return ResponseEntity.ok( new GenericResponse<String>("KO","Utente bloccato o non confermato"));
             }
         } else {
-            return ResponseEntity.ok("Credenziali inserite non valide");
+            return ResponseEntity.ok(new GenericResponse<String>("KO","Credenziali inserite non valide"));
         }
     }
 
@@ -45,9 +48,22 @@ public class UserController {
     public ResponseEntity<?> newUser(@RequestBody Utente user) {
         Utente newUser = utenteService.save(user);
         if(null != newUser){
-            return ResponseEntity.ok("Inserimento ok");
+            return ResponseEntity.ok( new GenericResponse<String>("OK","Inserimento ok"));
         }
-        return ResponseEntity.ok("Inserimento fallito");
+        return ResponseEntity.ok( new GenericResponse<String>("OK","Inserimento fallito"));
+    }
+
+    @RequestMapping(value="/logout", method = RequestMethod.POST)
+    public ResponseEntity<?> logOut(HttpServletRequest request){
+        // per l'operazione di logout a restituiamo un nuovo token con pochi millisecondi di vita
+        final String requestTokenHeader = request.getHeader("Authorization");
+        String token = jwtTokenUtil.refreshToken(requestTokenHeader,2*1000);
+        try {
+            final Date time = jwtTokenUtil.getExpirationDateFromToken(token);
+            return ResponseEntity.ok(new JwtResponse(token,time));
+        } catch (ExpiredJwtException e){
+            return ResponseEntity.ok(new GenericResponse<String>("KO",e.getMessage()));
+        }
     }
 
     @RequestMapping(value="/prova",method = RequestMethod.POST)
