@@ -7,6 +7,8 @@ import SpringBootBiblioteca.Biblioteca.model.Utente;
 import SpringBootBiblioteca.Biblioteca.service.UtenteService;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +27,8 @@ public class UserController {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
+    private  Logger logger = LogManager.getLogger(UserController.class);
+
     @RequestMapping(value="/login",method = RequestMethod.POST)
     public ResponseEntity<?> login(@RequestBody Utente user) {
 
@@ -35,6 +39,7 @@ public class UserController {
             if(userDetails.isEnabled()){
                 final String token = jwtTokenUtil.generateToken(userDetails);
                 final Date time = jwtTokenUtil.getExpirationDateFromToken(token);
+                this.logger.info("Utente "+ userDetails.getUsername()+" autorizzato");
                 return ResponseEntity.ok(new JwtResponse(token,time));
             } else{
                 return ResponseEntity.ok( new GenericResponse<String>("KO","Utente bloccato o non confermato"));
